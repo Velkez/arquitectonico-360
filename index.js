@@ -597,56 +597,7 @@
       updateIndicators(currentScene.getAttribute('data-id'));
     }
 
-    // Implementar navegación con swipe
-    let startX = 0;
-    let currentX = 0;
-    let isDragging = false;
-    const scrollContainer = mobileSceneList.querySelector('.overflow-x-auto');
-
-    if (scrollContainer) {
-      scrollContainer.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        isDragging = true;
-      }, { passive: true });
-
-      scrollContainer.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        currentX = e.touches[0].clientX;
-      }, { passive: true });
-
-      scrollContainer.addEventListener('touchend', (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-
-        const diffX = startX - currentX;
-        const threshold = 50; // mínimo movimiento para considerar swipe
-
-        if (Math.abs(diffX) > threshold) {
-          const currentScene = document.querySelector('.scene.current');
-          if (currentScene) {
-            const currentIndex = Array.from(mobileScenes).indexOf(currentScene);
-            let nextIndex;
-
-            if (diffX > 0 && currentIndex < mobileScenes.length - 1) {
-              // Swipe izquierda - siguiente escena
-              nextIndex = currentIndex + 1;
-            } else if (diffX < 0 && currentIndex > 0) {
-              // Swipe derecha - escena anterior
-              nextIndex = currentIndex - 1;
-            }
-
-            if (nextIndex !== undefined) {
-              const nextScene = mobileScenes[nextIndex];
-              const sceneId = nextScene.getAttribute('data-id');
-              const scene = findSceneById(sceneId);
-              if (scene) {
-                switchScene(scene);
-              }
-            }
-          }
-        }
-      });
-    }
+    // El scroll nativo horizontal está habilitado para navegar entre botones del menú
 
     // Añadir botones de navegación
     const navContainer = document.createElement('div');
