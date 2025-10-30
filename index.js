@@ -708,6 +708,26 @@
   // Inicializar viewer y escenas
   initViewerAndScenes();
 
+  // Agregar event listener al botón inmediatamente después de inicializar viewer y escenas
+  const startExperienceBtn = document.getElementById('startExperienceBtn');
+  if (startExperienceBtn) {
+    startExperienceBtn.addEventListener('click', function() {
+      console.log('Starting experience from menu');
+      const startMenu = document.getElementById('startMenu');
+      if (startMenu) {
+        startMenu.style.transition = 'opacity 0.5s ease-out';
+        startMenu.style.opacity = '0';
+        setTimeout(() => {
+          startMenu.style.display = 'none';
+          if (scenes && scenes.length > 0) {
+            switchScene(findSceneById("0-entrada"));
+          }
+        }, 500);
+      }
+      hideLoadingScreen();
+    });
+  }
+
   // Configurar autorotate
   autorotate = Marzipano.autorotate({
     yawSpeed: 0.03,
@@ -810,18 +830,7 @@
     }
   }, 5000);
 
-  // Mostrar escena inicial después de un retraso
-  setTimeout(() => {
-    console.log('Switching to initial scene...');
-    try {
-      switchScene(scenes[0]);
-      console.log('Scene switched successfully');
-    } catch (error) {
-      console.error('Error switching scene:', error);
-    }
-
-    console.log('Hiding loading screen...');
-    hideLoadingScreen();
-  }, 1500);
+  // No mostrar escena inicial automáticamente, esperar al menú de inicio
+  // El tour se iniciará desde el botón del menú de inicio
 
 })();
