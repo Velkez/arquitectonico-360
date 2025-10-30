@@ -5,54 +5,399 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Tour Virtual 360</title>
 
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
   <!-- Íconos Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
-  <link rel="stylesheet" href="style.css"/>
-
+  
+  <style>
+    /* Estilos personalizados para elementos que no se pueden lograr con Tailwind */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
+    
+    /* Scrollbar personalizado */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+      border-radius: 3px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 143, 0, 0.5);
+      border-radius: 3px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 143, 0, 0.7);
+    }
+    
+    /* Filtro para iconos blancos */
+    .icon-white-filter {
+      filter: brightness(0) invert(1);
+    }
+    
+    /* Estados activos para botones */
+    .button-active {
+      background: rgba(74, 140, 255, 0.2) !important;
+      border-color: rgba(74, 140, 255, 0.4) !important;
+    }
+    
+    /* Escena actual en el menú */
+    .current {
+      background: rgba(255, 111, 0, 0.3) !important;
+      color: #fff !important;
+      font-weight: 600;
+    }
+  </style>
 </head>
 
-<body class="multiple-scenes">
+<body class="multiple-scenes bg-gray-900 text-white overflow-hidden">
   <!-- Pantalla de carga -->
-  <div id="loadingScreen">
-    <div class="loading-content">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">TAINES DIGITAL</div>
-      <div class="loading-subtitle">Cargando experiencia virtual...</div>
+  <div id="loadingScreen" class="fixed inset-0 bg-gradient-to-br from-gray-900 to-gray-800 z-50 flex flex-col items-center justify-center">
+    <div class="text-center">
+      <div class="w-16 h-16 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto mb-6"></div>
+      <div class="text-xl font-semibold tracking-wider mb-2">TAINES DIGITAL</div>
+      <div class="text-sm opacity-80 tracking-wide">Cargando experiencia virtual...</div>
     </div>
   </div>
 
-  <div id="pano"></div>
+  <div id="pano" class="absolute inset-0"></div>
 
-  <!-- Menú lateral -->
-  <div id="sceneList">
-    <ul class="scenes">
-      <a class="scene" data-id="0-entrada"><i class="fa-solid fa-door-open"></i><li class="text">ENTRADA</li></a>
-      <a class="scene" data-id="1-corredor"><i class="fa-solid fa-person-walking"></i><li class="text">CORREDOR</li></a>
-      <a class="scene" data-id="2-sala"><i class="fa-solid fa-couch"></i><li class="text">SALA</li></a>
-      <a class="scene" data-id="3-entrada-cocina"><i class="fa-solid fa-utensils"></i><li class="text">ENTRADA COCINA</li></a>
-      <a class="scene" data-id="4-cocina"><i class="fa-solid fa-kitchen-set"></i><li class="text">COCINA</li></a>
-      <a class="scene" data-id="5-bao-auxiliar"><i class="fa-solid fa-bath"></i><li class="text">BAÑO AUXILIAR</li></a>
-      <a class="scene" data-id="6-escaleras"><i class="fa-solid fa-stairs"></i><li class="text">ESCALERAS</li></a>
-      <a class="scene" data-id="7-cuarto"><i class="fa-solid fa-bed"></i><li class="text">CUARTO</li></a>
-      <a class="scene" data-id="8-bao-cuarto"><i class="fa-solid fa-shower"></i><li class="text">BAÑO CUARTO</li></a>
+  <!-- Menú lateral para escritorio -->
+  <div id="sceneList" class="hidden md:block absolute top-20 left-5 w-56 max-h-[calc(100%-100px)] overflow-y-auto custom-scrollbar bg-orange-500/25 backdrop-blur-md rounded-xl shadow-lg shadow-orange-500/25 border border-orange-500/30 translate-x-0 transition-transform duration-400 z-30">
+    <ul class="py-2">
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="0-entrada">
+        <i class="fa-solid fa-door-open text-white w-5 text-center"></i>
+        <span class="scene-text">ENTRADA</span>
+      </a>
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="1-corredor">
+        <i class="fa-solid fa-person-walking text-white w-5 text-center"></i>
+        <span class="scene-text">CORREDOR</span>
+      </a>
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="2-sala">
+        <i class="fa-solid fa-couch text-white w-5 text-center"></i>
+        <span class="scene-text">SALA</span>
+      </a>
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="3-entrada-cocina">
+        <i class="fa-solid fa-utensils text-white w-5 text-center"></i>
+        <span class="scene-text">ENTRADA COCINA</span>
+      </a>
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="4-cocina">
+        <i class="fa-solid fa-kitchen-set text-white w-5 text-center"></i>
+        <span class="scene-text">COCINA</span>
+      </a>
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="5-bao-auxiliar">
+        <i class="fa-solid fa-bath text-white w-5 text-center"></i>
+        <span class="scene-text">BAÑO AUXILIAR</span>
+      </a>
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="6-escaleras">
+        <i class="fa-solid fa-stairs text-white w-5 text-center"></i>
+        <span class="scene-text">ESCALERAS</span>
+      </a>
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="7-cuarto">
+        <i class="fa-solid fa-bed text-white w-5 text-center"></i>
+        <span class="scene-text">CUARTO</span>
+      </a>
+      <a class="scene flex items-center gap-3 px-5 py-3 text-gray-100 transition-all duration-250 cursor-pointer hover:bg-orange-500/20" data-id="8-bao-cuarto">
+        <i class="fa-solid fa-shower text-white w-5 text-center"></i>
+        <span class="scene-text">BAÑO CUARTO</span>
+      </a>
     </ul>
   </div>
 
+  <!-- Menú móvil (aparece desde abajo) -->
+  <div id="mobileSceneList" class="md:hidden fixed bottom-0 left-0 right-0 bg-gray-800/90 backdrop-blur-md rounded-t-2xl border-t border-gray-700 transform translate-y-0 transition-transform duration-300 z-40">
+    <div class="h-1 w-12 bg-gray-500 rounded-full mx-auto mt-2 mb-1"></div>
+    <div class="text-center text-sm text-gray-400 mb-3">Desliza para navegar</div>
+    <div class="overflow-x-auto pb-4 custom-scrollbar">
+      <div class="flex px-4 space-x-3 min-w-max">
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="0-entrada">
+          <i class="fa-solid fa-door-open text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">ENTRADA</span>
+        </a>
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="1-corredor">
+          <i class="fa-solid fa-person-walking text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">CORREDOR</span>
+        </a>
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="2-sala">
+          <i class="fa-solid fa-couch text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">SALA</span>
+        </a>
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="3-entrada-cocina">
+          <i class="fa-solid fa-utensils text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">ENTRADA COCINA</span>
+        </a>
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="4-cocina">
+          <i class="fa-solid fa-kitchen-set text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">COCINA</span>
+        </a>
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="5-bao-auxiliar">
+          <i class="fa-solid fa-bath text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">BAÑO AUXILIAR</span>
+        </a>
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="6-escaleras">
+          <i class="fa-solid fa-stairs text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">ESCALERAS</span>
+        </a>
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="7-cuarto">
+          <i class="fa-solid fa-bed text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">CUARTO</span>
+        </a>
+        <a class="scene flex flex-col items-center p-3 rounded-xl bg-gray-700/50 min-w-[80px] transition-all duration-200 hover:bg-orange-500/30" data-id="8-bao-cuarto">
+          <i class="fa-solid fa-shower text-orange-500 text-lg mb-1"></i>
+          <span class="scene-text text-xs text-center">BAÑO CUARTO</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- Título -->
-  <div id="titleBar"><h1 class="sceneName">PROYECTO TAINES</h1></div>
+  <div id="titleBar" class="absolute top-10 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500/80 to-orange-600/80 backdrop-blur-lg border border-white/20 rounded-full px-6 py-3 shadow-lg shadow-orange-500/30 text-center z-10 transition-all duration-300">
+    <h1 class="sceneName font-bold text-white text-sm md:text-base tracking-wider uppercase text-shadow">PROYECTO TAINES</h1>
+  </div>
 
+  <!-- Botones de control -->
+  <div class="flex items-center space-x-3 absolute top-5 right-5 z-10">
+    <a id="autorotateToggle" class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-orange-500/15 border border-orange-500/40 rounded-full shadow-lg shadow-orange-500/25 transition-all duration-300 hover:scale-105 hover:bg-orange-500/25 cursor-pointer">
+      <img class="icon off icon-white-filter w-5 h-5 md:w-6 md:h-6" src="img/play.png"/>
+      <img class="icon on hidden icon-white-filter w-5 h-5 md:w-6 md:h-6" src="img/pause.png"/>
+    </a>
+    <a id="audioToggle" onclick="toggleAudio()" class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-orange-500/15 border border-orange-500/40 rounded-full shadow-lg shadow-orange-500/25 transition-all duration-300 hover:scale-105 hover:bg-orange-500/25 cursor-pointer hidden">
+      <i class="fas fa-volume-up text-white text-base md:text-lg"></i>
+    </a>
+    <a id="fullscreenToggle" class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-orange-500/15 border border-orange-500/40 rounded-full shadow-lg shadow-orange-500/25 transition-all duration-300 hover:scale-105 hover:bg-orange-500/25 cursor-pointer">
+      <img class="icon off icon-white-filter w-5 h-5 md:w-6 md:h-6" src="img/fullscreen.png"/>
+      <img class="icon on hidden icon-white-filter w-5 h-5 md:w-6 md:h-6" src="img/windowed.png"/>
+    </a>
+  </div>
 
-  <!-- Botones -->
-  <a id="autorotateToggle"><img class="icon off" src="img/play.png"/><img class="icon on" src="img/pause.png"/></a>
-  <a id="fullscreenToggle"><img class="icon off" src="img/fullscreen.png"/><img class="icon on" src="img/windowed.png"/></a>
-  <a id="audioToggle" onclick="toggleAudio()" style="display: none;"><i class="fas fa-volume-up"></i></a>
-  <a id="sceneListToggle"><i class="fas fa-bars"></i></a>
+  <!-- Botón para abrir menú lateral en móvil -->
+  <a id="mobileMenuToggle" class="md:hidden absolute top-5 left-5 w-10 h-10 flex items-center justify-center bg-orange-500/15 border border-orange-500/40 rounded-full shadow-lg shadow-orange-500/25 transition-all duration-300 hover:scale-105 hover:bg-orange-500/25 cursor-pointer z-10">
+    <i class="fas fa-bars text-white text-base"></i>
+  </a>
+
+  <!-- Botón para abrir menú lateral en escritorio -->
+  <a id="sceneListToggle" class="hidden md:flex absolute top-5 left-5 w-12 h-12 items-center justify-center bg-orange-500/15 border border-orange-500/40 rounded-full shadow-lg shadow-orange-500/25 transition-all duration-300 hover:scale-105 hover:bg-orange-500/25 cursor-pointer z-10">
+    <i class="fas fa-bars text-white text-lg"></i>
+  </a>
 
   <!-- Logo -->
-  <a id="logo" href="https://tainesdigital.com/" target="_blank">
+  <a id="logo" href="https://tainesdigital.com/" target="_blank" class="absolute bottom-5 right-5 bg-orange-500/10 backdrop-blur-md border border-orange-500/20 rounded-full px-4 py-2 shadow-lg shadow-orange-500/15 z-10 text-xs font-semibold text-white/80 uppercase tracking-wide transition-all duration-300 hover:bg-orange-500/20 hover:text-white hover:-translate-y-0.5 hover:shadow-orange-500/25">
     <span>TAINES DIGITAL</span>
   </a>
+
+  <!-- Botones de navegación (para móvil) -->
+  <div class="md:hidden absolute bottom-20 left-0 right-0 flex justify-center space-x-4 z-10">
+    <button id="viewLeft" class="viewControlButton w-12 h-12 flex items-center justify-center bg-gray-900/85 backdrop-blur-md rounded-full shadow-lg border border-white/10 transition-all duration-200 hover:bg-gray-800/90 hover:scale-105">
+      <img class="icon icon-white-filter w-5 h-5" src="img/left.png"/>
+    </button>
+    <button id="viewUp" class="viewControlButton w-12 h-12 flex items-center justify-center bg-gray-900/85 backdrop-blur-md rounded-full shadow-lg border border-white/10 transition-all duration-200 hover:bg-gray-800/90 hover:scale-105">
+      <img class="icon icon-white-filter w-5 h-5" src="img/up.png"/>
+    </button>
+    <button id="viewDown" class="viewControlButton w-12 h-12 flex items-center justify-center bg-gray-900/85 backdrop-blur-md rounded-full shadow-lg border border-white/10 transition-all duration-200 hover:bg-gray-800/90 hover:scale-105">
+      <img class="icon icon-white-filter w-5 h-5" src="img/down.png"/>
+    </button>
+    <button id="viewRight" class="viewControlButton w-12 h-12 flex items-center justify-center bg-gray-900/85 backdrop-blur-md rounded-full shadow-lg border border-white/10 transition-all duration-200 hover:bg-gray-800/90 hover:scale-105">
+      <img class="icon icon-white-filter w-5 h-5" src="img/right.png"/>
+    </button>
+  </div>
+
+  <!-- Script para manejar la interacción de la UI -->
+  <script>
+    // Manejo del menú móvil
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileSceneList = document.getElementById('mobileSceneList');
+    let isMobileMenuOpen = true; // Inicialmente visible
+
+    if (mobileMenuToggle && mobileSceneList) {
+      mobileMenuToggle.addEventListener('click', function() {
+        if (isMobileMenuOpen) {
+          mobileSceneList.classList.remove('translate-y-0');
+          mobileSceneList.classList.add('translate-y-full');
+        } else {
+          mobileSceneList.classList.remove('translate-y-full');
+          mobileSceneList.classList.add('translate-y-0');
+        }
+        isMobileMenuOpen = !isMobileMenuOpen;
+      });
+    }
+    
+    // Cerrar menú móvil al hacer clic en una escena
+    const mobileScenes = document.querySelectorAll('#mobileSceneList .scene');
+    mobileScenes.forEach(scene => {
+      scene.addEventListener('click', function() {
+        // No cerrar automáticamente el menú móvil, mantenerlo abierto
+        // Marcar escena actual
+        document.querySelectorAll('.scene').forEach(s => s.classList.remove('current'));
+        this.classList.add('current');
+
+        // Actualizar título si es necesario
+        const sceneTextElement = this.querySelector('.scene-text');
+        if (sceneTextElement) {
+          const sceneName = sceneTextElement.textContent;
+          const titleElement = document.querySelector('.sceneName');
+          if (titleElement) {
+            titleElement.textContent = sceneName;
+          }
+        }
+      });
+    });
+    
+    // Manejo del menú lateral en escritorio
+    const sceneListToggle = document.getElementById('sceneListToggle');
+    const sceneList = document.getElementById('sceneList');
+    let isSceneListOpen = true; // Inicialmente visible
+
+    if (sceneListToggle && sceneList) {
+      sceneListToggle.addEventListener('click', function() {
+        if (isSceneListOpen) {
+          sceneList.classList.remove('translate-x-0');
+          sceneList.classList.add('-translate-x-64');
+        } else {
+          sceneList.classList.remove('-translate-x-64');
+          sceneList.classList.add('translate-x-0');
+        }
+        isSceneListOpen = !isSceneListOpen;
+      });
+    }
+    
+    // Manejo de escenas en el menú lateral
+    const desktopScenes = document.querySelectorAll('#sceneList .scene');
+    desktopScenes.forEach(scene => {
+      scene.addEventListener('click', function() {
+        // Marcar escena actual
+        document.querySelectorAll('.scene').forEach(s => s.classList.remove('current'));
+        this.classList.add('current');
+
+        // Actualizar título
+        const sceneTextElement = this.querySelector('.scene-text');
+        if (sceneTextElement) {
+          const sceneName = sceneTextElement.textContent;
+          const titleElement = document.querySelector('.sceneName');
+          if (titleElement) {
+            titleElement.textContent = sceneName;
+          }
+        }
+      });
+    });
+
+    // Agregar eventos touch para móviles
+    const allScenes = document.querySelectorAll('.scene');
+    allScenes.forEach(scene => {
+      scene.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        this.click();
+      }, { passive: false });
+    });
+    
+    // Manejo del botón de auto-rotación
+    const autorotateToggle = document.getElementById('autorotateToggle');
+    if (autorotateToggle) {
+      autorotateToggle.addEventListener('click', function() {
+        this.classList.toggle('button-active');
+        const offIcon = this.querySelector('.icon.off');
+        const onIcon = this.querySelector('.icon.on');
+        
+        if (this.classList.contains('button-active')) {
+          if (offIcon) offIcon.classList.add('hidden');
+          if (onIcon) onIcon.classList.remove('hidden');
+          // Aquí iría la lógica para activar la rotación automática
+          console.log("Auto-rotación activada");
+        } else {
+          if (offIcon) offIcon.classList.remove('hidden');
+          if (onIcon) onIcon.classList.add('hidden');
+          // Aquí iría la lógica para desactivar la rotación automática
+          console.log("Auto-rotación desactivada");
+        }
+      });
+    }
+    
+    // Manejo del botón de pantalla completa
+    const fullscreenToggle = document.getElementById('fullscreenToggle');
+    if (fullscreenToggle) {
+      fullscreenToggle.addEventListener('click', function() {
+        this.classList.toggle('button-active');
+        const offIcon = this.querySelector('.icon.off');
+        const onIcon = this.querySelector('.icon.on');
+        
+        if (this.classList.contains('button-active')) {
+          if (offIcon) offIcon.classList.add('hidden');
+          if (onIcon) onIcon.classList.remove('hidden');
+          // Aquí iría la lógica para activar pantalla completa
+          if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+          }
+          console.log("Pantalla completa activada");
+        } else {
+          if (offIcon) offIcon.classList.remove('hidden');
+          if (onIcon) onIcon.classList.add('hidden');
+          // Aquí iría la lógica para salir de pantalla completa
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+          console.log("Pantalla completa desactivada");
+        }
+      });
+    }
+    
+    // Manejo de los botones de navegación
+    const viewButtons = document.querySelectorAll('.viewControlButton');
+    viewButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const id = this.id;
+        console.log(`Botón de navegación presionado: ${id}`);
+        // Aquí iría la lógica específica para cada botón de navegación
+      });
+    });
+    
+    // Detectar cambios en pantalla completa
+    document.addEventListener('fullscreenchange', function() {
+      if (!document.fullscreenElement && fullscreenToggle) {
+        fullscreenToggle.classList.remove('button-active');
+        const offIcon = fullscreenToggle.querySelector('.icon.off');
+        const onIcon = fullscreenToggle.querySelector('.icon.on');
+        if (offIcon) offIcon.classList.remove('hidden');
+        if (onIcon) onIcon.classList.add('hidden');
+      }
+    });
+    
+    // Simular la finalización de la carga
+    setTimeout(function() {
+      const loadingScreen = document.getElementById('loadingScreen');
+      if (loadingScreen) {
+        loadingScreen.style.animation = 'fadeOut 0.5s ease forwards';
+        setTimeout(function() {
+          loadingScreen.classList.add('hidden');
+        }, 500);
+      }
+    }, 2000);
+    
+    // Función placeholder para toggleAudio
+    function toggleAudio() {
+      console.log("Audio toggle function");
+      const audioToggle = document.getElementById('audioToggle');
+      if (audioToggle) {
+        audioToggle.classList.toggle('button-active');
+      }
+    }
+    
+    // Inicializar primera escena como activa
+    const firstScene = document.querySelector('.scene');
+    if (firstScene) {
+      firstScene.classList.add('current');
+    }
+  </script>
 
   <!-- Librerías y scripts -->
   <script src="vendor/screenfull.min.js"></script>

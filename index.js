@@ -427,12 +427,12 @@
    * @returns {HTMLElement} El elemento del hotspot.
    */
   function createLinkHotspotElement(hotspot) {
-    var wrapper = document.createElement('div');
-    wrapper.classList.add('hotspot', 'link-hotspot');
+    var wrapper = document.createElement('button');
+    wrapper.classList.add('hotspot', 'link-hotspot', 'w-10', 'h-10', 'md:w-12', 'md:h-12', 'flex', 'items-center', 'justify-center', 'bg-orange-500/40', 'border', 'border-orange-500/80', 'rounded-full', 'shadow-lg', 'shadow-orange-500/25', 'transition-all', 'duration-300', 'hover:scale-105', 'hover:bg-orange-500/25', 'cursor-pointer');
 
     var icon = document.createElement('i');
     var iconClasses = getIconForScene(hotspot.target);
-    icon.classList.add('fas', iconClasses);
+    icon.classList.add('fas', iconClasses, 'text-white');
 
     wrapper.addEventListener('click', function() {
       switchScene(findSceneById(hotspot.target));
@@ -526,6 +526,209 @@
   }
 
   // ===========================================
+  // MEJORAS PARA MENÚ MÓVIL
+  // ===========================================
+
+  /**
+   * Inicializa las mejoras del menú móvil: indicadores, swipe y navegación.
+   */
+  function initMobileMenuEnhancements() {
+    const mobileSceneList = document.getElementById('mobileSceneList');
+    if (!mobileSceneList) return;
+
+    // Crear contenedor de indicadores
+    const indicatorsContainer = document.createElement('div');
+    indicatorsContainer.id = 'mobileIndicators';
+    indicatorsContainer.className = 'flex justify-center space-x-2 mt-3 mb-2';
+
+    // Crear indicadores para cada escena
+    const mobileScenes = mobileSceneList.querySelectorAll('.scene');
+    mobileScenes.forEach((scene, index) => {
+      const indicator = document.createElement('div');
+      indicator.className = 'w-2 h-2 rounded-full bg-gray-400 transition-all duration-200';
+      indicator.dataset.index = index;
+      indicatorsContainer.appendChild(indicator);
+    });
+
+    // Insertar indicadores después del texto "Desliza para navegar"
+    const hintText = mobileSceneList.querySelector('.text-center.text-sm.text-gray-400');
+    if (hintText) {
+      hintText.insertAdjacentElement('afterend', indicatorsContainer);
+    }
+
+    // Actualizar indicadores cuando cambia la escena
+    function updateIndicators(currentSceneId) {
+      const indicators = indicatorsContainer.querySelectorAll('div');
+      const currentIndex = Array.from(mobileScenes).findIndex(scene =>
+        scene.getAttribute('data-id') === currentSceneId
+      );
+
+      indicators.forEach((indicator, index) => {
+        if (index === currentIndex) {
+          indicator.classList.remove('bg-gray-400');
+          indicator.classList.add('bg-orange-400');
+        } else {
+          indicator.classList.remove('bg-orange-400');
+          indicator.classList.add('bg-gray-400');
+        }
+      });
+    }
+
+    // Escuchar cambios de escena para actualizar indicadores
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const target = mutation.target;
+          if (target.classList.contains('scene') && target.classList.contains('current')) {
+            const sceneId = target.getAttribute('data-id');
+            updateIndicators(sceneId);
+          }
+        }
+      });
+    });
+
+    mobileScenes.forEach(scene => {
+      observer.observe(scene, { attributes: true, attributeFilter: ['class'] });
+    });
+
+    // Inicializar indicadores con la escena actual
+    const currentScene = document.querySelector('.scene.current');
+    if (currentScene) {
+      updateIndicators(currentScene.getAttribute('data-id'));
+    }
+
+    // Implementar navegación con swipe
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    const scrollContainer = mobileSceneList.querySelector('.overflow-x-auto');
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+      }, { passive: true });
+
+      scrollContainer.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX;
+      }, { passive: true });
+
+      scrollContainer.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+
+        const diffX = startX - currentX;
+        const threshold = 50; // mínimo movimiento para considerar swipe
+
+        if (Math.abs(diffX) > threshold) {
+          const currentScene = document.querySelector('.scene.current');
+          if (currentScene) {
+            const currentIndex = Array.from(mobileScenes).indexOf(currentScene);
+            let nextIndex;
+
+            if (diffX > 0 && currentIndex < mobileScenes.length - 1) {
+              // Swipe izquierda - siguiente escena
+              nextIndex = currentIndex + 1;
+            } else if (diffX < 0 && currentIndex > 0) {
+              // Swipe derecha - escena anterior
+              nextIndex = currentIndex - 1;
+            }
+
+            if (nextIndex !== undefined) {
+              const nextScene = mobileScenes[nextIndex];
+              const sceneId = nextScene.getAttribute('data-id');
+              const scene = findSceneById(sceneId);
+              if (scene) {
+                switchScene(scene);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Añadir botones de navegación
+    const navContainer = document.createElement('div');
+    navContainer.className = 'flex justify-between items-center mt-3 px-4';
+    navContainer.innerHTML = `
+      <button id="mobileNavLeft" class="w-8 h-8 flex items-center justify-center bg-gray-700/50 rounded-full transition-all duration-200 hover:bg-orange-500/30 disabled:opacity-30 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-left text-gray-400 text-sm"></i>
+      </button>
+      <button id="mobileNavRight" class="w-8 h-8 flex items-center justify-center bg-gray-700/50 rounded-full transition-all duration-200 hover:bg-orange-500/30 disabled:opacity-30 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-right text-gray-400 text-sm"></i>
+      </button>
+    `;
+
+    mobileSceneList.appendChild(navContainer);
+
+    // Funcionalidad de botones de navegación
+    const navLeft = document.getElementById('mobileNavLeft');
+    const navRight = document.getElementById('mobileNavRight');
+
+    function updateNavButtons() {
+      const currentScene = document.querySelector('.scene.current');
+      if (!currentScene) return;
+
+      const currentIndex = Array.from(mobileScenes).indexOf(currentScene);
+
+      navLeft.disabled = currentIndex <= 0;
+      navRight.disabled = currentIndex >= mobileScenes.length - 1;
+
+      if (navLeft.disabled) {
+        navLeft.classList.add('opacity-30', 'cursor-not-allowed');
+      } else {
+        navLeft.classList.remove('opacity-30', 'cursor-not-allowed');
+      }
+
+      if (navRight.disabled) {
+        navRight.classList.add('opacity-30', 'cursor-not-allowed');
+      } else {
+        navRight.classList.remove('opacity-30', 'cursor-not-allowed');
+      }
+    }
+
+    navLeft.addEventListener('click', () => {
+      const currentScene = document.querySelector('.scene.current');
+      if (!currentScene) return;
+
+      const currentIndex = Array.from(mobileScenes).indexOf(currentScene);
+      if (currentIndex > 0) {
+        const prevScene = mobileScenes[currentIndex - 1];
+        const sceneId = prevScene.getAttribute('data-id');
+        const scene = findSceneById(sceneId);
+        if (scene) {
+          switchScene(scene);
+        }
+      }
+    });
+
+    navRight.addEventListener('click', () => {
+      const currentScene = document.querySelector('.scene.current');
+      if (!currentScene) return;
+
+      const currentIndex = Array.from(mobileScenes).indexOf(currentScene);
+      if (currentIndex < mobileScenes.length - 1) {
+        const nextScene = mobileScenes[currentIndex + 1];
+        const sceneId = nextScene.getAttribute('data-id');
+        const scene = findSceneById(sceneId);
+        if (scene) {
+          switchScene(scene);
+        }
+      }
+    });
+
+    // Actualizar botones cuando cambia la escena
+    const sceneObserver = new MutationObserver(updateNavButtons);
+    mobileScenes.forEach(scene => {
+      sceneObserver.observe(scene, { attributes: true, attributeFilter: ['class'] });
+    });
+
+    // Inicializar estado de botones
+    updateNavButtons();
+  }
+
+  // ===========================================
   // INICIALIZACIÓN PRINCIPAL
   // ===========================================
 
@@ -590,19 +793,44 @@
     showSceneList();
   }
 
+  // Mostrar menú móvil inicialmente
+  if (document.body.classList.contains('mobile')) {
+    const mobileSceneList = document.getElementById('mobileSceneList');
+    if (mobileSceneList) {
+      mobileSceneList.classList.remove('translate-y-full');
+      mobileSceneList.classList.add('translate-y-0');
+    }
+  }
+
   // Configurar handlers para cambio de escena
   scenes.forEach(function(scene) {
     var el = document.querySelector('#sceneList .scene[data-id="' + scene.data.id + '"]');
-    el.addEventListener('click', function() {
-      switchScene(scene);
-      if (document.body.classList.contains('mobile')) {
-        hideSceneList();
-      }
-    });
+    if (el) {
+      el.addEventListener('click', function() {
+        switchScene(scene);
+        if (document.body.classList.contains('mobile')) {
+          hideSceneList();
+        }
+      });
+    }
+
+    // También configurar para menú móvil
+    var mobileEl = document.querySelector('#mobileSceneList .scene[data-id="' + scene.data.id + '"]');
+    if (mobileEl) {
+      mobileEl.addEventListener('click', function() {
+        switchScene(scene);
+        // No ocultar menú móvil automáticamente
+      });
+    }
   });
 
   // Configurar controles de vista
   setupViewControls();
+
+  // Inicializar mejoras del menú móvil
+  if (document.body.classList.contains('mobile')) {
+    initMobileMenuEnhancements();
+  }
 
   // Inicializar app
   if (document.readyState === 'loading') {

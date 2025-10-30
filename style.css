@@ -154,7 +154,7 @@
 
         #sceneList .scene i {
             font-size: 17px;
-            color: #ff8f00;
+            color: white;
             width: 22px;
             text-align: center;
         }
@@ -167,6 +167,12 @@
             background: rgba(255, 111, 0, 0.3);
             color: #fff;
             font-weight: 600;
+        }
+
+        /* Estilos para menú móvil */
+        #mobileSceneList .scene.current {
+            background: rgba(255, 111, 0, 0.5) !important;
+            border: 1px solid rgba(255, 111, 0, 0.8);
         }
 
         /* BOTONES DE CONTROL - DISEÑO CIRCULAR MODERNO */
@@ -354,29 +360,17 @@
             transition: all 0.25s ease;
             cursor: pointer;
             position: relative;
-        }
-
-        .link-hotspot::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 24px;
-            height: 24px;
-            background: rgba(255, 111, 0, 0.9);
-            border-radius: 50%;
-            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .link-hotspot i {
             color: white;
-            font-size: 16px;
+            font-size: 1.25rem;
+            display: block;
+            line-height: 1;
             pointer-events: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             z-index: 1;
         }
 
@@ -384,19 +378,17 @@
             transform: scale(1.15);
             background: rgba(255, 143, 0, 1);
         }
-
-        .link-hotspot:hover::before {
-            background: rgba(255, 143, 0, 1);
-        }
         
         /* Contenedor del icono (es un div para usar background-image) */
         .link-hotspot-icon {
-            width: 20px; 
-            height: 20px; 
+            width: 20px;
+            height: 20px;
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             filter: brightness(0) invert(1); /* Filtro por defecto para iconos oscuros sobre fondo claro */
+            vertical-align: middle;
+            line-height: 1;
         }
 
         .mobile .link-hotspot-icon {
@@ -548,21 +540,174 @@
         }
 
         /* RESPONSIVE ADJUSTMENTS */
-        @media (max-width: 768px) {
+        /* Móviles pequeños (< 480px) */
+        @media (max-width: 480px) {
             #titleBar {
-                top: 30px;
-                padding: 10px 20px;
-                font-size: 16px;
+                top: 20px;
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+
+            #titleBar .sceneName {
+                font-size: 14px;
             }
 
             #logo {
-                bottom: 15px;
-                right: 15px;
-                font-size: 10px;
-                padding: 6px 12px;
+                bottom: 10px;
+                right: 10px;
+                font-size: 9px;
+                padding: 5px 10px;
             }
 
-            #sceneList { width: calc(100% - 40px); left: 20px; }
+            #sceneList {
+                width: calc(100% - 30px);
+                left: 15px;
+                top: 60px;
+                max-height: calc(100% - 80px);
+            }
+
+            #sceneList .scene {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            #sceneList .scene i {
+                font-size: 15px;
+                width: 20px;
+            }
+
+            /* Botones de control más pequeños y mejor posicionados */
+            #sceneListToggle, #autorotateToggle, #audioToggle, #fullscreenToggle {
+                width: 40px;
+                height: 40px;
+                top: 10px;
+            }
+
+            #sceneListToggle { left: 10px; }
+            #autorotateToggle { right: 110px; }
+            #audioToggle { right: 60px; }
+            #fullscreenToggle { right: 10px; }
+
+            /* Botones de navegación más pequeños */
+            .viewControlButton {
+                width: 40px;
+                height: 40px;
+                bottom: 10px;
+            }
+
+            .viewControlButton .icon {
+                width: 18px;
+                height: 18px;
+            }
+
+            #viewUp {
+                margin-left: -20px;
+                bottom: 70px;
+            }
+
+            #viewDown {
+                margin-left: -20px;
+                bottom: 10px;
+            }
+
+            #viewLeft {
+                left: calc(50% - 50px);
+                bottom: 10px;
+            }
+
+            #viewRight {
+                left: calc(50% + 10px);
+                bottom: 10px;
+            }
+
+            #viewIn {
+                left: calc(50% - 100px);
+                bottom: 10px;
+            }
+
+            #viewOut {
+                left: calc(50% + 60px);
+                bottom: 10px;
+            }
+
+            /* Hotspots más pequeños pero visibles */
+            .link-hotspot {
+                width: 40px;
+                height: 40px;
+                margin-left: -20px;
+                margin-top: -20px;
+            }
+
+            .link-hotspot i {
+                font-size: 14px;
+            }
+
+            .link-hotspot-icon {
+                width: 16px;
+                height: 16px;
+            }
+
+            .info-hotspot .info-hotspot-header {
+                width: 32px;
+                height: 32px;
+            }
+
+            .info-hotspot .info-hotspot-icon {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        /* Tablets (481px - 1024px) */
+        @media (min-width: 481px) and (max-width: 1024px) {
+            #titleBar {
+                top: 30px;
+                padding: 12px 25px;
+                font-size: 17px;
+            }
+
+            #sceneList {
+                width: 250px;
+                left: 20px;
+                top: 80px;
+            }
+
+            #sceneList .scene {
+                padding: 14px 20px;
+            }
+
+            /* Ajustes para tablets en landscape */
+            @media (orientation: landscape) and (max-height: 600px) {
+                #titleBar {
+                    top: 15px;
+                    padding: 8px 20px;
+                }
+
+                #sceneList {
+                    top: 50px;
+                    max-height: calc(100% - 60px);
+                }
+
+                .viewControlButton {
+                    width: 42px;
+                    height: 42px;
+                    bottom: 12px;
+                }
+
+                #viewUp { bottom: 75px; }
+                #viewDown { bottom: 12px; }
+                #viewLeft { left: calc(50% - 55px); }
+                #viewRight { left: calc(50% + 10px); }
+                #viewIn { left: calc(50% - 110px); }
+                #viewOut { left: calc(50% + 62px); }
+            }
+        }
+
+        /* Escritorio pequeño (1025px - 1200px) */
+        @media (min-width: 1025px) and (max-width: 1200px) {
+            #sceneList {
+                width: 240px;
+            }
         }
 
         /* ESTADO DE BOTONES ACTIVOS/INACTIVOS */
@@ -571,7 +716,38 @@
             border-color: rgba(74, 140, 255, 0.4);
         }
 
+        /* ESTILOS PARA MEJORAS DEL MENÚ MÓVIL */
+        #mobileIndicators {
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+
+        #mobileIndicators .bg-orange-400 {
+            transform: scale(1.2);
+        }
+
+        /* Botones de navegación móvil */
+        #mobileNavLeft, #mobileNavRight {
+            min-width: 32px;
+            min-height: 32px;
+        }
+
+        #mobileNavLeft i, #mobileNavRight i {
+            color: #9ca3af;
+            transition: color 0.2s ease;
+        }
+
+        #mobileNavLeft:not(.opacity-30):hover i,
+        #mobileNavRight:not(.opacity-30):hover i {
+            color: #fb923c;
+        }
+
+        /* Ajustes para el contenedor del menú móvil con nuevos elementos */
+        #mobileSceneList .overflow-x-auto {
+            padding-bottom: 16px;
+        }
+
         /* OCULTAR CONTROLES CUANDO NO HAY MÚLTIPLES ESCENAS */
-        body.single-scene #sceneList, body.single-scene #sceneListToggle {
+        body.single-scene #sceneList, body.single-scene #sceneListToggle, body.single-scene #mobileSceneList, body.single-scene #mobileMenuToggle {
             display: none;
         }
