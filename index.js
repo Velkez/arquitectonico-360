@@ -85,39 +85,6 @@
     return null;
   }
 
-  // ===========================================
-  // AUDIO
-  // ===========================================
-  let backgroundAudio = null;
-  let audioEnabled = false;
-
-  /**
-   * Inicializa el audio de fondo si está disponible.
-   */
-  function initBackgroundAudio() {
-    try {
-      backgroundAudio = new Audio('audio/background.mp3');
-      backgroundAudio.loop = true;
-      backgroundAudio.volume = 0.3;
-    } catch (e) {
-      console.log('Audio not available:', e);
-    }
-  }
-
-  /**
-   * Alterna el estado del audio de fondo (play/pause).
-   */
-  function toggleAudio() {
-    if (!backgroundAudio) initBackgroundAudio();
-
-    if (audioEnabled) {
-      backgroundAudio.pause();
-      audioEnabled = false;
-    } else {
-      backgroundAudio.play().catch(e => console.log('Audio autoplay blocked'));
-      audioEnabled = true;
-    }
-  }
 
   // ===========================================
   // INICIALIZACIÓN DE LA APLICACIÓN
@@ -159,9 +126,34 @@
       });
     }
 
-    // Inicializar audio si está disponible
-    if (typeof Audio !== 'undefined') {
-      initBackgroundAudio();
+
+    // Agregar listener al botón de inicio (se garantiza que el DOM ya está listo aquí)
+    const startExperienceBtn = document.getElementById('startExperienceBtn');
+    if (startExperienceBtn) {
+      startExperienceBtn.addEventListener('click', function() {
+        console.log('Starting experience from menu (initApp)');
+        const startMenu = document.getElementById('startMenu');
+        if (startMenu) {
+          startMenu.style.transition = 'opacity 0.5s ease-out';
+          startMenu.style.opacity = '0';
+          setTimeout(() => {
+            startMenu.style.display = 'none';
+            if (scenes && scenes.length > 0) {
+              switchScene(findSceneById("0-entrada"));
+            }
+          }, 500);
+        }
+        hideLoadingScreen();
+        // Mostrar elementos ocultos
+        const titleBar = document.getElementById('titleBar');
+        const autorotateToggle = document.getElementById('autorotateToggle');
+        const fullscreenToggle = document.getElementById('fullscreenToggle');
+        const logo = document.getElementById('logo');
+        if (titleBar) titleBar.classList.remove('hidden');
+        if (autorotateToggle) autorotateToggle.classList.remove('hidden');
+        if (fullscreenToggle) fullscreenToggle.classList.remove('hidden');
+        if (logo) logo.classList.remove('hidden');
+      });
     }
 
     console.log('App initialized successfully');
@@ -428,7 +420,7 @@
    */
   function createLinkHotspotElement(hotspot) {
     var wrapper = document.createElement('button');
-    wrapper.classList.add('hotspot', 'link-hotspot', 'w-10', 'h-10', 'md:w-12', 'md:h-12', 'flex', 'items-center', 'justify-center', 'bg-orange-500/40', 'border', 'border-orange-500/80', 'rounded-full', 'shadow-lg', 'shadow-orange-500/25', 'transition-all', 'duration-300', 'hover:scale-105', 'hover:bg-orange-500/25', 'cursor-pointer');
+    wrapper.classList.add('hotspot', 'link-hotspot', 'w-10', 'h-10', 'md:w-12', 'md:h-12', 'flex', 'items-center', 'justify-center', 'bg-orange-500/40', 'border', 'border-orange-500/80', 'rounded-full', 'shadow-lg', 'shadow-orange-500/25', 'transition-all', 'duration-300', 'hover:bg-orange-500/25', 'cursor-pointer');
 
     var icon = document.createElement('i');
     var iconClasses = getIconForScene(hotspot.target);
@@ -709,10 +701,14 @@
   initViewerAndScenes();
 
   // Agregar event listener al botón inmediatamente después de inicializar viewer y escenas
-  const startExperienceBtn = document.getElementById('startExperienceBtn');
-  if (startExperienceBtn) {
-    startExperienceBtn.addEventListener('click', function() {
-      console.log('Starting experience from menu');
+  // Fallback: si por alguna razón el botón no fue encontrado cuando se adjuntó
+  // dentro de initApp (por ejemplo, scripts concatenados/async en producción),
+  // usamos delegación de eventos en el documento como último recurso.
+  document.addEventListener('click', function delegatedStartClick(e) {
+    const target = e.target;
+    if (!target) return;
+    if (target.id === 'startExperienceBtn' || target.closest && target.closest('#startExperienceBtn')) {
+      console.log('Starting experience from delegated click');
       const startMenu = document.getElementById('startMenu');
       if (startMenu) {
         startMenu.style.transition = 'opacity 0.5s ease-out';
@@ -725,8 +721,19 @@
         }, 500);
       }
       hideLoadingScreen();
-    });
-  }
+      // Mostrar elementos ocultos
+      const titleBar = document.getElementById('titleBar');
+      const autorotateToggle = document.getElementById('autorotateToggle');
+      const fullscreenToggle = document.getElementById('fullscreenToggle');
+      const logo = document.getElementById('logo');
+      if (titleBar) titleBar.classList.remove('hidden');
+      if (autorotateToggle) autorotateToggle.classList.remove('hidden');
+      if (fullscreenToggle) fullscreenToggle.classList.remove('hidden');
+      if (logo) logo.classList.remove('hidden');
+      // Una vez ejecutado, removemos este listener delegado para no procesar clicks innecesarios.
+      document.removeEventListener('click', delegatedStartClick);
+    }
+  });
 
   // Configurar autorotate
   autorotate = Marzipano.autorotate({

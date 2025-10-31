@@ -1,0 +1,29 @@
+{
+  "name": "arq-360",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Velkez/arquitectonico-360#readme",
+  "bugs": {
+    "url": "https://github.com/Velkez/arquitectonico-360/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Velkez/arquitectonico-360.git"
+  },
+  "license": "ISC",
+  "author": "Velkez",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "http-server -p 3000 -c-1",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.16",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
