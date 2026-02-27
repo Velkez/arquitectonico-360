@@ -1,0 +1,663 @@
+/* =========================================
+   TOUR VIRTUAL 360° - ARQUITECTÓNICO
+   Estilos nativos optimizados para Marzipano
+   ========================================= */
+
+/* ---------- Reset ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Pano Container ---------- */
+#pano {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+#pano canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* ---------- UI Container ---------- */
+#ui-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#ui-container > * {
+  pointer-events: auto;
+}
+
+/* ---------- Loading Screen ---------- */
+#loadingScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+#loadingScreen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader {
+  text-align: center;
+}
+
+.loader-ring {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.loader-text {
+  color: #888;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Start Menu ---------- */
+#startMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(26, 26, 46, 0.95) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+#startMenu.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(1.05);
+}
+
+.start-container {
+  text-align: center;
+  max-width: 400px;
+  animation: fadeInUp 0.8s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.start-logo {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 20px 40px rgba(249, 115, 22, 0.4);
+}
+
+.start-logo i {
+  font-size: 36px;
+  color: white;
+}
+
+.start-container h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #fff 0%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.start-description {
+  color: #aaa;
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.start-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 16px 36px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
+}
+
+.start-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(249, 115, 22, 0.5);
+}
+
+.start-button i {
+  font-size: 14px;
+}
+
+/* ---------- Top Bar ---------- */
+#topBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#topBar.hidden {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+#menuToggle, #closeSidebar {
+  width: 44px;
+  height: 44px;
+}
+
+#sceneTitle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(249, 115, 22, 0.9);
+  padding: 8px 24px;
+  border-radius: 25px;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+}
+
+.title-text {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#controls {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------- Icon Buttons ---------- */
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(249, 115, 22, 0.3);
+  border-color: rgba(249, 115, 22, 0.5);
+  transform: scale(1.05);
+}
+
+.icon-btn.active {
+  background: rgba(249, 115, 22, 0.4);
+  border-color: #f97316;
+}
+
+.icon-btn.small {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+
+/* ---------- Sidebar (Desktop) ---------- */
+#sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100%;
+  background: rgba(15, 15, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(249, 115, 22, 0.15);
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+#sidebar.open {
+  transform: translateX(0);
+}
+
+#sidebarOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#sidebarOverlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid rgba(249, 115, 22, 0.15);
+}
+
+.sidebar-header span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f97316;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+#sceneList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+}
+
+#sceneList::-webkit-scrollbar {
+  width: 4px;
+}
+
+#sceneList::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.3);
+  border-radius: 2px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-item:hover {
+  background: rgba(249, 115, 22, 0.1);
+  color: #fff;
+  border-left-color: rgba(249, 115, 22, 0.5);
+}
+
+.sidebar-item.active {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fff;
+  border-left-color: #f97316;
+}
+
+.sidebar-item i {
+  width: 20px;
+  text-align: center;
+  color: #f97316;
+  font-size: 16px;
+}
+
+.sidebar-item span {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ---------- Mobile Bar ---------- */
+#mobileBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(10, 10, 15, 0.98) 0%, rgba(10, 10, 15, 0.9) 30%, rgba(10, 10, 15, 0.7) 60%, transparent 100%);
+  padding: 60px 8px 20px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 40;
+}
+
+#mobileBar.hidden {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+.mobile-bar-label {
+  display: none;
+}
+
+.mobile-scenes-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 4px 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-scenes-scroll::-webkit-scrollbar {
+  height: 3px;
+}
+
+.mobile-scenes-scroll::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.4);
+  border-radius: 2px;
+}
+
+.mobile-scene {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  min-width: 72px;
+  min-height: 72px;
+  background: rgba(31, 41, 55, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 16px;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.mobile-scene:hover {
+  background: rgba(249, 115, 22, 0.25);
+  border-color: rgba(249, 115, 22, 0.5);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.mobile-scene.active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.4), rgba(234, 88, 12, 0.3));
+  border-color: rgba(249, 115, 22, 0.8);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+}
+
+.mobile-scene i {
+  font-size: 20px;
+  color: #f97316;
+  transition: color 0.25s ease;
+}
+
+.mobile-scene:hover i,
+.mobile-scene.active i {
+  color: #fff;
+}
+
+.mobile-scene span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ---------- Logo ---------- */
+#logo {
+  position: absolute;
+  bottom: 7rem;
+  right: 16px;
+  background: rgba(15, 15, 20, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 10px 16px;
+  border-radius: 25px;
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+
+#logo.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#logo:hover {
+  background: rgba(249, 115, 22, 0.2);
+  border-color: rgba(249, 115, 22, 0.4);
+  transform: translateY(-2px);
+}
+
+#logo span {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  font-style: ;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ---------- Hotspots ---------- */
+.hotspot {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.hotspot:hover {
+  transform: scale(1.15);
+}
+
+.link-hotspot {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(249, 115, 22, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.5);
+  animation: hotspotPulse 2s ease-in-out infinite;
+}
+
+@keyframes hotspotPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(249, 115, 22, 0.5); }
+  50% { box-shadow: 0 4px 30px rgba(249, 115, 22, 0.8); }
+}
+
+.link-hotspot i {
+  color: white;
+  font-size: 18px;
+}
+
+/* ---------- Utility Classes ---------- */
+.hidden {
+  display: none !important;
+}
+
+.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* ---------- Media Queries ---------- */
+
+/* Tablet */
+@media (min-width: 768px) {
+  #topBar {
+    padding: 0 24px;
+    height: 70px;
+  }
+
+  #sceneTitle {
+    padding: 10px 28px;
+  }
+
+  .title-text {
+    font-size: 14px;
+  }
+
+  .icon-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  #controls {
+    gap: 10px;
+  }
+
+  /* Ocultar mobile bar en tablet y desktop */
+  #mobileBar {
+    display: none !important;
+  }
+
+  #sidebar {
+    width: 300px;
+  }
+
+  .sidebar-item {
+    padding: 16px 24px;
+  }
+
+  .sidebar-item i {
+    font-size: 18px;
+  }
+
+  .sidebar-item span {
+    font-size: 14px;
+  }
+
+  #logo {
+    top: auto;
+    bottom: 24px;
+    right: 24px;
+    left: auto;
+    padding: 12px 20px;
+  }
+
+  #logo span {
+    font-size: 12px;
+  }
+
+  .start-container h1 {
+    font-size: 36px;
+  }
+
+  .start-description {
+    font-size: 16px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  #topBar {
+    padding: 0 32px;
+  }
+
+  .title-text {
+    font-size: 15px;
+  }
+
+  #sidebar {
+    transform: translateX(0);
+  }
+
+  #sidebarOverlay {
+    display: none;
+  }
+
+  #menuToggle {
+    display: none;
+  }
+
+  #logo span {
+    font-size: 13px;
+  }
+}
+
+/* Mobile Small */
+@media (max-width: 380px) {
+  .title-text {
+    font-size: 11px;
+  }
+
+  #sceneTitle {
+    padding: 6px 16px;
+  }
+
+  .mobile-scene {
+    padding: 8px 10px;
+  }
+
+  .mobile-scene span {
+    font-size: 9px;
+  }
+}

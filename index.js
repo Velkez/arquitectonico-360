@@ -1,242 +1,180 @@
-/*
- * Copyright 2016 Google Inc. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/**
+ * Tour Virtual 360° - ARQUITECTÓNICO
+ * Powered by Marzipano.js
  */
-'use strict';
 
 (function() {
-  // ===========================================
-  // CONFIGURACIÓN GLOBAL Y DEPENDENCIAS
-  // ===========================================
+  'use strict';
+
+  // Dependencies
   var Marzipano = window.Marzipano;
   var bowser = window.bowser;
   var screenfull = window.screenfull;
   var data = window.APP_DATA;
 
-  // Variables globales para el viewer y escenas
+  // Configuration
+  var TRANSITION_DURATION = 800; // ms
+  var IDLE_TIMEOUT = 3000; // ms
+
+  // State
   var viewer, scenes, autorotate;
+  var currentScene = null;
+  var isAutorotating = false;
 
-  // Elementos DOM principales
-  var panoElement, sceneNameElement, sceneListElement, sceneElements,
-      sceneListToggleElement, autorotateToggleElement, fullscreenToggleElement;
+  // DOM Elements
+  var elements = {};
 
-  // ===========================================
-  // UTILIDADES
-  // ===========================================
+  // Scene icon mapping
+  var sceneIcons = {
+    '0-entrada': 'fa-door-open',
+    '1-corredor': 'fa-walking',
+    '2-sala': 'fa-couch',
+    '3-entrada-cocina': 'fa-door-open',
+    '4-cocina': 'fa-kitchen-set',
+    '5-bao-auxiliar': 'fa-bath',
+    '6-escaleras': 'fa-stairs',
+    '7-cuarto': 'fa-bed',
+    '8-bao-cuarto': 'fa-shower'
+  };
 
-  /**
-   * Sanitiza una cadena de texto para prevenir inyección de HTML.
-   * @param {string} s - La cadena a sanitizar.
-   * @returns {string} La cadena sanitizada.
-   */
-  function sanitize(s) {
-    return s.replace('&', '&').replace('<', '<').replace('>', '>');
+  // ============ Initialization ============
+
+  function init() {
+    console.log('Initializing 360° Tour...');
+    
+    // Cache DOM elements
+    cacheElements();
+
+    // Setup device detection
+    setupDeviceMode();
+
+    // Build scene list UI
+    buildSceneList();
+
+    // Initialize Marzipano viewer
+    initViewer();
+
+    // Setup event handlers
+    setupEventHandlers();
+
+    // Hide loading screen
+    hideLoadingScreen();
+
+    console.log('Tour initialized');
   }
 
-  /**
-   * Detiene la propagación de eventos táctiles y de scroll para evitar interferencias con controles de vista.
-   * @param {HTMLElement} element - El elemento al que aplicar el bloqueo.
-   */
-  function stopTouchAndScrollEventPropagation(element) {
-    var eventList = ['touchstart', 'touchmove', 'touchend', 'touchcancel', 'wheel', 'mousewheel'];
-    for (var i = 0; i < eventList.length; i++) {
-      element.addEventListener(eventList[i], function(event) {
-        event.stopPropagation();
-      });
-    }
+  function cacheElements() {
+    elements = {
+      loadingScreen: document.getElementById('loadingScreen'),
+      startMenu: document.getElementById('startMenu'),
+      startBtn: document.getElementById('startExperienceBtn'),
+      pano: document.getElementById('pano'),
+      topBar: document.getElementById('topBar'),
+      sceneTitle: document.querySelector('.title-text'),
+      sidebar: document.getElementById('sidebar'),
+      sidebarOverlay: document.getElementById('sidebarOverlay'),
+      menuToggle: document.getElementById('menuToggle'),
+      closeSidebar: document.getElementById('closeSidebar'),
+      sceneList: document.getElementById('sceneList'),
+      mobileBar: document.getElementById('mobileBar'),
+      logo: document.getElementById('logo'),
+      autorotateBtn: document.getElementById('autorotateBtn'),
+      fullscreenBtn: document.getElementById('fullscreenBtn')
+    };
   }
 
-  /**
-   * Busca una escena por su ID en la lista de escenas.
-   * @param {string} id - El ID de la escena a buscar.
-   * @returns {Object|null} La escena encontrada o null si no existe.
-   */
-  function findSceneById(id) {
-    for (var i = 0; i < scenes.length; i++) {
-      if (scenes[i].data.id === id) {
-        return scenes[i];
-      }
-    }
-    return null;
-  }
+  // ============ Device Detection ============
 
-  /**
-   * Busca los datos de una escena por su ID en los datos globales.
-   * @param {string} id - El ID de la escena a buscar.
-   * @returns {Object|null} Los datos de la escena o null si no existe.
-   */
-  function findSceneDataById(id) {
-    for (var i = 0; i < data.scenes.length; i++) {
-      if (data.scenes[i].id === id) {
-        return data.scenes[i];
-      }
-    }
-    return null;
-  }
-
-
-  // ===========================================
-  // INICIALIZACIÓN DE LA APLICACIÓN
-  // ===========================================
-
-  /**
-   * Inicializa la aplicación cuando el DOM está listo.
-   */
-  function initApp() {
-    console.log('DOM loaded, initializing...');
-
-    // Mostrar elementos iniciales
-    const initialImage = document.getElementById('initialImage');
-    const projectDetails = document.getElementById('projectDetails');
-
-    if (initialImage) {
-      initialImage.style.display = 'block';
-      console.log('Initial image shown');
-    }
-
-    if (projectDetails) {
-      projectDetails.style.display = 'block';
-      console.log('Project details shown');
-    }
-
-    // Configurar botones de toggle
-    toggleButton("autorotateToggle");
-    toggleButton("sceneListToggle");
-    document.getElementById("sceneListToggle").classList.add("enabled");
-
-    // Configurar pantalla completa
-    const fs = document.getElementById("fullscreenToggle");
-    if (fs) {
-      fs.addEventListener("click", () => {
-        if (screenfull && screenfull.isEnabled) {
-          screenfull.toggle();
-          fs.classList.toggle("enabled");
-        }
-      });
-    }
-
-
-    // Agregar listener al botón de inicio (se garantiza que el DOM ya está listo aquí)
-    const startExperienceBtn = document.getElementById('startExperienceBtn');
-    if (startExperienceBtn) {
-      startExperienceBtn.addEventListener('click', function() {
-        console.log('Starting experience from menu (initApp)');
-        const startMenu = document.getElementById('startMenu');
-        if (startMenu) {
-          startMenu.style.transition = 'opacity 0.5s ease-out';
-          startMenu.style.opacity = '0';
-          setTimeout(() => {
-            startMenu.style.display = 'none';
-            if (scenes && scenes.length > 0) {
-              switchScene(findSceneById("0-entrada"));
-            }
-          }, 500);
-        }
-        hideLoadingScreen();
-        // Mostrar elementos ocultos
-        const titleBar = document.getElementById('titleBar');
-        const autorotateToggle = document.getElementById('autorotateToggle');
-        const fullscreenToggle = document.getElementById('fullscreenToggle');
-        const logo = document.getElementById('logo');
-        if (titleBar) titleBar.classList.remove('hidden');
-        if (autorotateToggle) autorotateToggle.classList.remove('hidden');
-        if (fullscreenToggle) fullscreenToggle.classList.remove('hidden');
-        if (logo) logo.classList.remove('hidden');
-      });
-    }
-
-    console.log('App initialized successfully');
-  }
-
-  /**
-   * Oculta la pantalla de carga.
-   */
-  function hideLoadingScreen() {
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (loadingScreen) {
-      loadingScreen.classList.add('hide');
-      setTimeout(() => {
-        loadingScreen.style.display = 'none';
-        console.log('Loading screen hidden');
-      }, 500);
-    }
-  }
-
-  // ===========================================
-  // CONFIGURACIÓN DEL VIEWER Y ESCENAS
-  // ===========================================
-
-  /**
-   * Configura el modo de dispositivo (desktop/mobile) y detección táctil.
-   */
   function setupDeviceMode() {
-    // Detectar desktop o mobile
-    if (window.matchMedia) {
-      var setMode = function() {
-        if (mql.matches) {
-          document.body.classList.remove('desktop');
-          document.body.classList.add('mobile');
-        } else {
-          document.body.classList.remove('mobile');
-          document.body.classList.add('desktop');
-        }
-      };
-      var mql = matchMedia("(max-width: 500px), (max-height: 500px)");
-      setMode();
-      mql.addListener(setMode);
+    var isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+      document.body.classList.add('is-mobile');
+      document.body.classList.remove('is-desktop');
     } else {
-      document.body.classList.add('desktop');
+      document.body.classList.add('is-desktop');
+      document.body.classList.remove('is-mobile');
     }
 
-    // Detectar dispositivo táctil
-    document.body.classList.add('no-touch');
-    window.addEventListener('touchstart', function() {
-      document.body.classList.remove('no-touch');
-      document.body.classList.add('touch');
+    // Listen for resize
+    window.addEventListener('resize', function() {
+      var mobile = window.innerWidth < 768;
+      document.body.classList.toggle('is-mobile', mobile);
+      document.body.classList.toggle('is-desktop', !mobile);
+    });
+  }
+
+  // ============ Scene List UI ============
+
+  function buildSceneList() {
+    if (!elements.sceneList || !data.scenes) return;
+
+    data.scenes.forEach(function(sceneData) {
+      var item = document.createElement('div');
+      item.className = 'sidebar-item';
+      item.dataset.sceneId = sceneData.id;
+
+      var icon = sceneIcons[sceneData.id] || 'fa-compass';
+      item.innerHTML = '<i class="fas ' + icon + '"></i><span>' + sceneData.name + '</span>';
+
+      item.addEventListener('click', function() {
+        switchToScene(sceneData.id);
+        if (window.innerWidth < 1024) {
+          closeSidebar();
+        }
+      });
+
+      elements.sceneList.appendChild(item);
     });
 
-    // Fallback para tooltips en IE < 11
-    if (bowser.msie && parseFloat(bowser.version) < 11) {
-      document.body.classList.add('tooltip-fallback');
-    }
+    // Mobile scenes are in HTML, add listeners
+    document.querySelectorAll('.mobile-scene').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var sceneId = this.dataset.scene;
+        switchToScene(sceneId);
+      });
+    });
   }
 
-  /**
-   * Inicializa el viewer de Marzipano y crea las escenas.
-   */
-  function initViewerAndScenes() {
-    // Opciones del viewer
+  // ============ Marzipano Viewer ============
+
+  function initViewer() {
+    // Create viewer
     var viewerOpts = {
       controls: {
-        mouseViewMode: data.settings.mouseViewMode
+        mouseViewMode: data.settings?.mouseViewMode || 'drag'
       }
     };
 
-    // Inicializar viewer
-    viewer = new Marzipano.Viewer(panoElement, viewerOpts);
+    viewer = new Marzipano.Viewer(elements.pano, viewerOpts);
 
-    // Crear escenas
+    // Calculate base path
+    var basePath = getBasePath();
+
+    // Create scenes
     scenes = data.scenes.map(function(sceneData) {
-      var urlPrefix = "tiles";
+      // Source with preview
+      var urlPrefix = basePath + 'tiles/' + sceneData.id;
       var source = Marzipano.ImageUrlSource.fromString(
-        urlPrefix + "/" + sceneData.id + "/{z}/{f}/{y}/{x}.jpg",
-        { cubeMapPreviewUrl: urlPrefix + "/" + sceneData.id + "/preview.jpg" });
+        urlPrefix + '/{z}/{f}/{y}/{x}.jpg',
+        { cubeMapPreviewUrl: urlPrefix + '/preview.jpg' }
+      );
+
+      // Geometry
       var geometry = new Marzipano.CubeGeometry(sceneData.levels);
 
-      var limiter = Marzipano.RectilinearView.limit.traditional(sceneData.faceSize, 100*Math.PI/180, 120*Math.PI/180);
-      var view = new Marzipano.RectilinearView(sceneData.initialViewParameters, limiter);
+      // View with limits
+      var limiter = Marzipano.RectilinearView.limit.traditional(
+        sceneData.faceSize || 1024,
+        100 * Math.PI / 180,
+        120 * Math.PI / 180
+      );
+      var view = new Marzipano.RectilinearView(
+        sceneData.initialViewParameters || {},
+        limiter
+      );
 
+      // Create scene
       var scene = viewer.createScene({
         source: source,
         geometry: geometry,
@@ -244,600 +182,267 @@
         pinFirstLevel: true
       });
 
-      // Crear hotspots de enlace
-      sceneData.linkHotspots.forEach(function(hotspot) {
-        var element = createLinkHotspotElement(hotspot);
-        scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
+      // Add link hotspots
+      (sceneData.linkHotspots || []).forEach(function(hotspot) {
+        addLinkHotspot(scene, hotspot);
       });
 
-      // Crear hotspots de información
-      sceneData.infoHotspots.forEach(function(hotspot) {
-        var element = createInfoHotspotElement(hotspot);
-        scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
+      // Add info hotspots
+      (sceneData.infoHotspots || []).forEach(function(hotspot) {
+        addInfoHotspot(scene, hotspot);
       });
 
       return {
-        data: sceneData,
+        id: sceneData.id,
+        name: sceneData.name,
         scene: scene,
         view: view
       };
     });
+
+    // Setup autorotate
+    autorotate = Marzipano.autorotate({
+      yawSpeed: 0.03,
+      targetPitch: 0,
+      targetFov: Math.PI / 2
+    });
   }
 
-  /**
-   * Configura los controles de movimiento de la vista.
-   */
-  function setupViewControls() {
-    var viewUpElement = document.querySelector('#viewUp');
-    var viewDownElement = document.querySelector('#viewDown');
-    var viewLeftElement = document.querySelector('#viewLeft');
-    var viewRightElement = document.querySelector('#viewRight');
-    var viewInElement = document.querySelector('#viewIn');
-    var viewOutElement = document.querySelector('#viewOut');
-
-    var velocity = 0.7;
-    var friction = 0.1;
-
-    var controls = viewer.controls();
-    controls.registerMethod('upElement', new Marzipano.ElementPressControlMethod(viewUpElement, 'y', -velocity, friction), true);
-    controls.registerMethod('downElement', new Marzipano.ElementPressControlMethod(viewDownElement, 'y', velocity, friction), true);
-    controls.registerMethod('leftElement', new Marzipano.ElementPressControlMethod(viewLeftElement, 'x', -velocity, friction), true);
-    controls.registerMethod('rightElement', new Marzipano.ElementPressControlMethod(viewRightElement, 'x', velocity, friction), true);
-    controls.registerMethod('inElement', new Marzipano.ElementPressControlMethod(viewInElement, 'zoom', -velocity, friction), true);
-    controls.registerMethod('outElement', new Marzipano.ElementPressControlMethod(viewOutElement, 'zoom', velocity, friction), true);
+  function getBasePath() {
+    var path = window.location.pathname;
+    var lastSlash = path.lastIndexOf('/');
+    return lastSlash > 0 ? path.substring(0, lastSlash + 1) : '/';
   }
 
-  // ===========================================
-  // MANEJO DE ESCENAS
-  // ===========================================
+  // ============ Hotspots ============
 
-  /**
-   * Cambia a una escena específica, deteniendo y reiniciando autorotate si es necesario.
-   * @param {Object} scene - La escena a la que cambiar.
-   */
-  function switchScene(scene) {
+  function addLinkHotspot(scene, hotspot) {
+    var el = document.createElement('button');
+    el.className = 'hotspot link-hotspot';
+    
+    var iconClass = sceneIcons[hotspot.target] || 'fa-arrow-right';
+    el.innerHTML = '<i class="fas ' + iconClass + '"></i>';
+
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      switchToScene(hotspot.target);
+    });
+
+    scene.hotspotContainer().createHotspot(el, {
+      yaw: hotspot.yaw,
+      pitch: hotspot.pitch
+    });
+  }
+
+  function addInfoHotspot(scene, hotspot) {
+    // Info hotspots implementation if needed
+  }
+
+  // ============ Scene Switching ============
+
+  function switchToScene(sceneId) {
+    var scene = findScene(sceneId);
+    if (!scene || scene === currentScene) return;
+
+    console.log('Switching to:', scene.name);
+
+    // Stop current autorotate
     stopAutorotate();
-    scene.view.setParameters(scene.data.initialViewParameters);
-    scene.scene.switchTo();
-    startAutorotate();
-    updateSceneName(scene);
-    updateSceneList(scene);
-  }
 
-  /**
-   * Actualiza el nombre de la escena en la interfaz.
-   * @param {Object} scene - La escena actual.
-   */
-  function updateSceneName(scene) {
-    sceneNameElement.innerHTML = sanitize(scene.data.name);
-  }
+    // Set view parameters
+    scene.view.setParameters(scene.scene.view()._initialViewParameters || {});
 
-  /**
-   * Actualiza la lista de escenas para resaltar la escena actual.
-   * @param {Object} scene - La escena actual.
-   */
-  function updateSceneList(scene) {
-    for (var i = 0; i < sceneElements.length; i++) {
-      var el = sceneElements[i];
-      if (el.getAttribute('data-id') === scene.data.id) {
-        el.classList.add('current');
-      } else {
-        el.classList.remove('current');
-      }
-    }
-  }
+    // Switch with transition
+    scene.scene.switchTo({
+      transitionDuration: TRANSITION_DURATION
+    });
 
-  /**
-   * Inicia el tour cambiando a la primera escena.
-   */
-  window.startTour = function() {
-    console.log('Starting tour...');
-    if (scenes && scenes.length > 0) {
-      switchScene(scenes[0]);
-      console.log('Switched to first scene');
-    } else {
-      console.error('No scenes available');
-    }
-  };
+    // Update state
+    currentScene = scene;
+    isAutorotating = false;
 
-  // ===========================================
-  // CONTROLES DE UI
-  // ===========================================
+    // Update UI
+    updateSceneUI(sceneId);
 
-  /**
-   * Agrega funcionalidad de toggle a un botón por ID.
-   * @param {string} id - El ID del botón.
-   */
-  function toggleButton(id) {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener("click", () => el.classList.toggle("enabled"));
-  }
-
-  /**
-   * Muestra la lista de escenas.
-   */
-  function showSceneList() {
-    sceneListElement.classList.add('enabled');
-    sceneListToggleElement.classList.add('enabled');
-  }
-
-  /**
-   * Oculta la lista de escenas.
-   */
-  function hideSceneList() {
-    sceneListElement.classList.remove('enabled');
-    sceneListToggleElement.classList.remove('enabled');
-  }
-
-  /**
-   * Alterna la visibilidad de la lista de escenas.
-   */
-  function toggleSceneList() {
-    sceneListElement.classList.toggle('enabled');
-    sceneListToggleElement.classList.toggle('enabled');
-  }
-
-  /**
-   * Inicia el autorotate si está habilitado.
-   */
-  function startAutorotate() {
-    if (!autorotateToggleElement.classList.contains('enabled')) {
-      return;
-    }
-    viewer.startMovement(autorotate);
-    viewer.setIdleMovement(3000, autorotate);
-  }
-
-  /**
-   * Detiene el autorotate.
-   */
-  function stopAutorotate() {
-    viewer.stopMovement();
-    viewer.setIdleMovement(Infinity);
-  }
-
-  /**
-   * Alterna el estado del autorotate.
-   */
-  function toggleAutorotate() {
-    if (autorotateToggleElement.classList.contains('enabled')) {
-      autorotateToggleElement.classList.remove('enabled');
-      stopAutorotate();
-    } else {
-      autorotateToggleElement.classList.add('enabled');
+    // Resume autorotate if was active
+    if (elements.autorotateBtn?.classList.contains('active')) {
       startAutorotate();
     }
   }
 
-  // ===========================================
-  // HOTSPOTS
-  // ===========================================
-
-  /**
-   * Crea un elemento de hotspot de enlace.
-   * @param {Object} hotspot - Los datos del hotspot.
-   * @returns {HTMLElement} El elemento del hotspot.
-   */
-  function createLinkHotspotElement(hotspot) {
-    var wrapper = document.createElement('button');
-    wrapper.classList.add('hotspot', 'link-hotspot', 'w-10', 'h-10', 'md:w-12', 'md:h-12', 'flex', 'items-center', 'justify-center', 'bg-orange-500/40', 'border', 'border-orange-500/80', 'rounded-full', 'shadow-lg', 'shadow-orange-500/25', 'transition-all', 'duration-300', 'hover:bg-orange-500/25', 'cursor-pointer');
-
-    var icon = document.createElement('i');
-    var iconClasses = getIconForScene(hotspot.target);
-    icon.classList.add('fas', iconClasses, 'text-white');
-
-    wrapper.addEventListener('click', function() {
-      switchScene(findSceneById(hotspot.target));
-    });
-
-    stopTouchAndScrollEventPropagation(wrapper);
-    wrapper.appendChild(icon);
-
-    return wrapper;
+  function findScene(id) {
+    for (var i = 0; i < scenes.length; i++) {
+      if (scenes[i].id === id) return scenes[i];
+    }
+    return null;
   }
 
-  /**
-   * Crea un elemento de hotspot de información.
-   * @param {Object} hotspot - Los datos del hotspot.
-   * @returns {HTMLElement} El elemento del hotspot.
-   */
-  function createInfoHotspotElement(hotspot) {
-    var wrapper = document.createElement('div');
-    wrapper.classList.add('hotspot', 'info-hotspot');
-
-    var header = document.createElement('div');
-    header.classList.add('info-hotspot-header');
-
-    var iconWrapper = document.createElement('div');
-    iconWrapper.classList.add('info-hotspot-icon-wrapper');
-    var icon = document.createElement('img');
-    icon.src = 'img/info.png';
-    icon.classList.add('info-hotspot-icon');
-    iconWrapper.appendChild(icon);
-
-    var titleWrapper = document.createElement('div');
-    titleWrapper.classList.add('info-hotspot-title-wrapper');
-    var title = document.createElement('div');
-    title.classList.add('info-hotspot-title');
-    title.innerHTML = hotspot.title;
-    titleWrapper.appendChild(title);
-
-    var closeWrapper = document.createElement('div');
-    closeWrapper.classList.add('info-hotspot-close-wrapper');
-    var closeIcon = document.createElement('img');
-    closeIcon.src = 'img/close.png';
-    closeIcon.classList.add('info-hotspot-close-icon');
-    closeWrapper.appendChild(closeIcon);
-
-    header.appendChild(iconWrapper);
-    header.appendChild(titleWrapper);
-    header.appendChild(closeWrapper);
-
-    var text = document.createElement('div');
-    text.classList.add('info-hotspot-text');
-    text.innerHTML = hotspot.text;
-
-    wrapper.appendChild(header);
-    wrapper.appendChild(text);
-
-    var modal = document.createElement('div');
-    modal.innerHTML = wrapper.innerHTML;
-    modal.classList.add('info-hotspot-modal');
-    document.body.appendChild(modal);
-
-    var toggle = function() {
-      wrapper.classList.toggle('visible');
-      modal.classList.toggle('visible');
-    };
-
-    wrapper.querySelector('.info-hotspot-header').addEventListener('click', toggle);
-    modal.querySelector('.info-hotspot-close-wrapper').addEventListener('click', toggle);
-    stopTouchAndScrollEventPropagation(wrapper);
-
-    return wrapper;
-  }
-
-  /**
-   * Obtiene la clase de icono de Font Awesome para una escena específica.
-   * @param {string} target - El ID de la escena objetivo.
-   * @returns {string} La clase del icono.
-   */
-  function getIconForScene(target) {
-    var iconMap = {
-      '0-entrada': 'fa-door-open',
-      '1-corredor': 'fa-person-walking',
-      '2-sala': 'fa-couch',
-      '3-entrada-cocina': 'fa-utensils',
-      '4-cocina': 'fa-kitchen-set',
-      '5-bao-auxiliar': 'fa-bath',
-      '6-escaleras': 'fa-stairs',
-      '7-cuarto': 'fa-bed',
-      '8-bao-cuarto': 'fa-shower'
-    };
-    return iconMap[target] || 'fa-arrow-up';
-  }
-
-  // ===========================================
-  // MEJORAS PARA MENÚ MÓVIL
-  // ===========================================
-
-  /**
-   * Inicializa las mejoras del menú móvil: indicadores, swipe y navegación.
-   */
-  function initMobileMenuEnhancements() {
-    const mobileSceneList = document.getElementById('mobileSceneList');
-    if (!mobileSceneList) return;
-
-    // Crear contenedor de indicadores
-    const indicatorsContainer = document.createElement('div');
-    indicatorsContainer.id = 'mobileIndicators';
-    indicatorsContainer.className = 'flex justify-center space-x-2 mt-3 mb-2';
-
-    // Crear indicadores para cada escena
-    const mobileScenes = mobileSceneList.querySelectorAll('.scene');
-    mobileScenes.forEach((scene, index) => {
-      const indicator = document.createElement('div');
-      indicator.className = 'w-2 h-2 rounded-full bg-gray-400 transition-all duration-200';
-      indicator.dataset.index = index;
-      indicatorsContainer.appendChild(indicator);
-    });
-
-    // Insertar indicadores después del texto "Desliza para navegar"
-    const hintText = mobileSceneList.querySelector('.text-center.text-sm.text-gray-400');
-    if (hintText) {
-      hintText.insertAdjacentElement('afterend', indicatorsContainer);
+  function updateSceneUI(sceneId) {
+    // Update title
+    var scene = findScene(sceneId);
+    if (scene && elements.sceneTitle) {
+      elements.sceneTitle.textContent = scene.name;
     }
 
-    // Actualizar indicadores cuando cambia la escena
-    function updateIndicators(currentSceneId) {
-      const indicators = indicatorsContainer.querySelectorAll('div');
-      const currentIndex = Array.from(mobileScenes).findIndex(scene =>
-        scene.getAttribute('data-id') === currentSceneId
-      );
+    // Update sidebar active state
+    document.querySelectorAll('.sidebar-item').forEach(function(item) {
+      item.classList.toggle('active', item.dataset.sceneId === sceneId);
+    });
 
-      indicators.forEach((indicator, index) => {
-        if (index === currentIndex) {
-          indicator.classList.remove('bg-gray-400');
-          indicator.classList.add('bg-orange-400');
-        } else {
-          indicator.classList.remove('bg-orange-400');
-          indicator.classList.add('bg-gray-400');
+    // Update mobile active state
+    document.querySelectorAll('.mobile-scene').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.scene === sceneId);
+    });
+  }
+
+  // ============ Autorotate ============
+
+  function startAutorotate() {
+    if (!viewer) return;
+    viewer.startMovement(autorotate);
+    viewer.setIdleMovement(IDLE_TIMEOUT, autorotate);
+    isAutorotating = true;
+  }
+
+  function stopAutorotate() {
+    if (!viewer) return;
+    viewer.stopMovement();
+    viewer.setIdleMovement(Infinity);
+    isAutorotating = false;
+  }
+
+  function toggleAutorotate() {
+    if (isAutorotating) {
+      stopAutorotate();
+      elements.autorotateBtn?.classList.remove('active');
+      elements.autorotateBtn?.querySelector('i')?.classList.replace('fa-pause', 'fa-play');
+    } else {
+      startAutorotate();
+      elements.autorotateBtn?.classList.add('active');
+      elements.autorotateBtn?.querySelector('i')?.classList.replace('fa-play', 'fa-pause');
+    }
+  }
+
+  // ============ Fullscreen ============
+
+  function toggleFullscreen() {
+    if (!screenfull || !screenfull.enabled) return;
+
+    screenfull.toggle();
+    
+    var isFullscreen = screenfull.isFullscreen;
+    elements.fullscreenBtn?.classList.toggle('active', isFullscreen);
+    elements.fullscreenBtn?.querySelector('i')?.classList.toggle('fa-expand', !isFullscreen);
+    elements.fullscreenBtn?.querySelector('i')?.classList.toggle('fa-compress', isFullscreen);
+  }
+
+  // ============ Sidebar ============
+
+  function toggleSidebar() {
+    elements.sidebar?.classList.toggle('open');
+    elements.sidebarOverlay?.classList.toggle('visible');
+    elements.sidebarOverlay?.classList.toggle('hidden');
+  }
+
+  function closeSidebar() {
+    elements.sidebar?.classList.remove('open');
+    elements.sidebarOverlay?.classList.remove('visible');
+    elements.sidebarOverlay?.classList.add('hidden');
+  }
+
+  function openSidebar() {
+    elements.sidebar?.classList.add('open');
+    elements.sidebarOverlay?.classList.add('visible');
+    elements.sidebarOverlay?.classList.remove('hidden');
+  }
+
+  // ============ Start Experience ============
+
+  function startExperience() {
+    // Hide start menu
+    elements.startMenu?.classList.add('hidden');
+
+    // Show UI elements
+    elements.topBar?.classList.remove('hidden');
+    elements.mobileBar?.classList.remove('hidden');
+    elements.logo?.classList.remove('hidden');
+
+    // Open sidebar on desktop
+    if (window.innerWidth >= 1024) {
+      openSidebar();
+    }
+
+    // Switch to first scene
+    if (scenes && scenes.length > 0) {
+      switchToScene('0-entrada');
+    }
+  }
+
+  // ============ Loading ============
+
+  function hideLoadingScreen() {
+    setTimeout(function() {
+      elements.loadingScreen?.classList.add('hidden');
+    }, 500);
+  }
+
+  // ============ Event Handlers ============
+
+  function setupEventHandlers() {
+    // Start button
+    elements.startBtn?.addEventListener('click', startExperience);
+
+    // Menu toggle
+    elements.menuToggle?.addEventListener('click', toggleSidebar);
+
+    // Close sidebar
+    elements.closeSidebar?.addEventListener('click', closeSidebar);
+    elements.sidebarOverlay?.addEventListener('click', closeSidebar);
+
+    // Autorotate
+    elements.autorotateBtn?.addEventListener('click', toggleAutorotate);
+
+    // Fullscreen
+    elements.fullscreenBtn?.addEventListener('click', toggleFullscreen);
+
+    // Screenfull change event
+    if (screenfull && screenfull.on) {
+      screenfull.on('change', function() {
+        if (!screenfull.isFullscreen) {
+          elements.fullscreenBtn?.classList.remove('active');
+          elements.fullscreenBtn?.querySelector('i')?.classList.replace('fa-compress', 'fa-expand');
         }
       });
     }
 
-    // Escuchar cambios de escena para actualizar indicadores
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-          const target = mutation.target;
-          if (target.classList.contains('scene') && target.classList.contains('current')) {
-            const sceneId = target.getAttribute('data-id');
-            updateIndicators(sceneId);
-          }
-        }
-      });
-    });
-
-    mobileScenes.forEach(scene => {
-      observer.observe(scene, { attributes: true, attributeFilter: ['class'] });
-    });
-
-    // Inicializar indicadores con la escena actual
-    const currentScene = document.querySelector('.scene.current');
-    if (currentScene) {
-      updateIndicators(currentScene.getAttribute('data-id'));
-    }
-
-    // El scroll nativo horizontal está habilitado para navegar entre botones del menú
-
-    // Añadir botones de navegación
-    const navContainer = document.createElement('div');
-    navContainer.className = 'flex justify-between items-center mt-3 px-4';
-    navContainer.innerHTML = `
-      <button id="mobileNavLeft" class="w-8 h-8 flex items-center justify-center bg-gray-700/50 rounded-full transition-all duration-200 hover:bg-orange-500/30 disabled:opacity-30 disabled:cursor-not-allowed">
-        <i class="fas fa-chevron-left text-gray-400 text-sm"></i>
-      </button>
-      <button id="mobileNavRight" class="w-8 h-8 flex items-center justify-center bg-gray-700/50 rounded-full transition-all duration-200 hover:bg-orange-500/30 disabled:opacity-30 disabled:cursor-not-allowed">
-        <i class="fas fa-chevron-right text-gray-400 text-sm"></i>
-      </button>
-    `;
-
-    mobileSceneList.appendChild(navContainer);
-
-    // Funcionalidad de botones de navegación
-    const navLeft = document.getElementById('mobileNavLeft');
-    const navRight = document.getElementById('mobileNavRight');
-
-    function updateNavButtons() {
-      const currentScene = document.querySelector('.scene.current');
-      if (!currentScene) return;
-
-      const currentIndex = Array.from(mobileScenes).indexOf(currentScene);
-
-      navLeft.disabled = currentIndex <= 0;
-      navRight.disabled = currentIndex >= mobileScenes.length - 1;
-
-      if (navLeft.disabled) {
-        navLeft.classList.add('opacity-30', 'cursor-not-allowed');
-      } else {
-        navLeft.classList.remove('opacity-30', 'cursor-not-allowed');
-      }
-
-      if (navRight.disabled) {
-        navRight.classList.add('opacity-30', 'cursor-not-allowed');
-      } else {
-        navRight.classList.remove('opacity-30', 'cursor-not-allowed');
-      }
-    }
-
-    navLeft.addEventListener('click', () => {
-      const currentScene = document.querySelector('.scene.current');
-      if (!currentScene) return;
-
-      const currentIndex = Array.from(mobileScenes).indexOf(currentScene);
-      if (currentIndex > 0) {
-        const prevScene = mobileScenes[currentIndex - 1];
-        const sceneId = prevScene.getAttribute('data-id');
-        const scene = findSceneById(sceneId);
-        if (scene) {
-          switchScene(scene);
-        }
+    // Keyboard
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeSidebar();
       }
     });
 
-    navRight.addEventListener('click', () => {
-      const currentScene = document.querySelector('.scene.current');
-      if (!currentScene) return;
-
-      const currentIndex = Array.from(mobileScenes).indexOf(currentScene);
-      if (currentIndex < mobileScenes.length - 1) {
-        const nextScene = mobileScenes[currentIndex + 1];
-        const sceneId = nextScene.getAttribute('data-id');
-        const scene = findSceneById(sceneId);
-        if (scene) {
-          switchScene(scene);
-        }
-      }
-    });
-
-    // Actualizar botones cuando cambia la escena
-    const sceneObserver = new MutationObserver(updateNavButtons);
-    mobileScenes.forEach(scene => {
-      sceneObserver.observe(scene, { attributes: true, attributeFilter: ['class'] });
-    });
-
-    // Inicializar estado de botones
-    updateNavButtons();
+    // Fallback: hide loading after timeout
+    setTimeout(hideLoadingScreen, 5000);
   }
 
-  // ===========================================
-  // INICIALIZACIÓN PRINCIPAL
-  // ===========================================
+  // ============ Start ============
 
-  // Fallback para screenfull
+  // Screenfull fallback
   if (typeof screenfull === 'undefined') {
     window.screenfull = {
       enabled: false,
-      isEnabled: false,
+      isFullscreen: false,
       toggle: function() {},
       on: function() {}
     };
   }
 
-  // Obtener elementos DOM
-  panoElement = document.querySelector('#pano');
-  sceneNameElement = document.querySelector('#titleBar .sceneName');
-  sceneListElement = document.querySelector('#sceneList');
-  sceneElements = document.querySelectorAll('#sceneList .scene');
-  sceneListToggleElement = document.querySelector('#sceneListToggle');
-  autorotateToggleElement = document.querySelector('#autorotateToggle');
-  fullscreenToggleElement = document.querySelector('#fullscreenToggle');
-
-  // Configurar modo de dispositivo
-  setupDeviceMode();
-
-  // Inicializar viewer y escenas
-  initViewerAndScenes();
-
-  // Agregar event listener al botón inmediatamente después de inicializar viewer y escenas
-  // Fallback: si por alguna razón el botón no fue encontrado cuando se adjuntó
-  // dentro de initApp (por ejemplo, scripts concatenados/async en producción),
-  // usamos delegación de eventos en el documento como último recurso.
-  document.addEventListener('click', function delegatedStartClick(e) {
-    const target = e.target;
-    if (!target) return;
-    if (target.id === 'startExperienceBtn' || target.closest && target.closest('#startExperienceBtn')) {
-      console.log('Starting experience from delegated click');
-      const startMenu = document.getElementById('startMenu');
-      if (startMenu) {
-        startMenu.style.transition = 'opacity 0.5s ease-out';
-        startMenu.style.opacity = '0';
-        setTimeout(() => {
-          startMenu.style.display = 'none';
-          if (scenes && scenes.length > 0) {
-            switchScene(findSceneById("0-entrada"));
-          }
-        }, 500);
-      }
-      hideLoadingScreen();
-      // Mostrar elementos ocultos
-      const titleBar = document.getElementById('titleBar');
-      const autorotateToggle = document.getElementById('autorotateToggle');
-      const fullscreenToggle = document.getElementById('fullscreenToggle');
-      const logo = document.getElementById('logo');
-      if (titleBar) titleBar.classList.remove('hidden');
-      if (autorotateToggle) autorotateToggle.classList.remove('hidden');
-      if (fullscreenToggle) fullscreenToggle.classList.remove('hidden');
-      if (logo) logo.classList.remove('hidden');
-      // Una vez ejecutado, removemos este listener delegado para no procesar clicks innecesarios.
-      document.removeEventListener('click', delegatedStartClick);
-    }
-  });
-
-  // Configurar autorotate
-  autorotate = Marzipano.autorotate({
-    yawSpeed: 0.03,
-    targetPitch: 0,
-    targetFov: Math.PI/2
-  });
-  if (data.settings.autorotateEnabled) {
-    autorotateToggleElement.classList.add('enabled');
-  }
-
-  // Configurar controles de UI
-  autorotateToggleElement.addEventListener('click', toggleAutorotate);
-  sceneListToggleElement.addEventListener('click', toggleSceneList);
-
-  // Configurar pantalla completa
-  if (screenfull.enabled && data.settings.fullscreenButton) {
-    document.body.classList.add('fullscreen-enabled');
-    fullscreenToggleElement.addEventListener('click', function() {
-      screenfull.toggle();
-    });
-    screenfull.on('change', function() {
-      if (screenfull.isFullscreen) {
-        fullscreenToggleElement.classList.add('enabled');
-      } else {
-        fullscreenToggleElement.classList.remove('enabled');
-      }
-    });
-  } else {
-    document.body.classList.add('fullscreen-disabled');
-  }
-
-  // Mostrar lista de escenas en desktop
-  if (!document.body.classList.contains('mobile')) {
-    showSceneList();
-  }
-
-  // Mostrar menú móvil inicialmente
-  if (document.body.classList.contains('mobile')) {
-    const mobileSceneList = document.getElementById('mobileSceneList');
-    if (mobileSceneList) {
-      mobileSceneList.classList.remove('translate-y-full');
-      mobileSceneList.classList.add('translate-y-0');
-    }
-  }
-
-  // Configurar handlers para cambio de escena
-  scenes.forEach(function(scene) {
-    var el = document.querySelector('#sceneList .scene[data-id="' + scene.data.id + '"]');
-    if (el) {
-      el.addEventListener('click', function() {
-        switchScene(scene);
-        if (document.body.classList.contains('mobile')) {
-          hideSceneList();
-        }
-      });
-    }
-
-    // También configurar para menú móvil
-    var mobileEl = document.querySelector('#mobileSceneList .scene[data-id="' + scene.data.id + '"]');
-    if (mobileEl) {
-      mobileEl.addEventListener('click', function() {
-        switchScene(scene);
-        // No ocultar menú móvil automáticamente
-      });
-    }
-  });
-
-  // Configurar controles de vista
-  setupViewControls();
-
-  // Inicializar mejoras del menú móvil
-  if (document.body.classList.contains('mobile')) {
-    initMobileMenuEnhancements();
-  }
-
-  // Inicializar app
+  // Initialize when DOM ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    initApp();
+    init();
   }
-
-  // Fallback de inicialización
-  window.addEventListener('load', function() {
-    if (!document.getElementById('sceneList').classList.contains('enabled')) {
-      console.log('Fallback initialization');
-      initApp();
-    }
-  });
-
-  // Forzar ocultar pantalla de carga después de 5 segundos
-  setTimeout(() => {
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (loadingScreen && !loadingScreen.classList.contains('hide')) {
-      console.log('Force hiding loading screen');
-      loadingScreen.classList.add('hide');
-      setTimeout(() => {
-        loadingScreen.style.display = 'none';
-      }, 500);
-    }
-  }, 5000);
-
-  // No mostrar escena inicial automáticamente, esperar al menú de inicio
-  // El tour se iniciará desde el botón del menú de inicio
 
 })();
