@@ -215,9 +215,6 @@
   .top-5 {
     top: calc(var(--spacing) * 5);
   }
-  .top-10 {
-    top: calc(var(--spacing) * 10);
-  }
   .top-20 {
     top: calc(var(--spacing) * 20);
   }
@@ -232,9 +229,6 @@
   }
   .bottom-5 {
     bottom: calc(var(--spacing) * 5);
-  }
-  .bottom-20 {
-    bottom: calc(var(--spacing) * 20);
   }
   .left-0 {
     left: calc(var(--spacing) * 0);
@@ -399,13 +393,6 @@
       margin-inline-end: calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-x-reverse)));
     }
   }
-  .space-x-4 {
-    :where(& > :not(:last-child)) {
-      --tw-space-x-reverse: 0;
-      margin-inline-start: calc(calc(var(--spacing) * 4) * var(--tw-space-x-reverse));
-      margin-inline-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-x-reverse)));
-    }
-  }
   .overflow-hidden {
     overflow: hidden;
   }
@@ -463,12 +450,6 @@
       border-color: color-mix(in oklab, var(--color-orange-500) 80%, transparent);
     }
   }
-  .border-white\/10 {
-    border-color: color-mix(in srgb, #fff 10%, transparent);
-    @supports (color: color-mix(in lab, red, red)) {
-      border-color: color-mix(in oklab, var(--color-white) 10%, transparent);
-    }
-  }
   .border-white\/20 {
     border-color: color-mix(in srgb, #fff 20%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -501,12 +482,6 @@
   }
   .bg-gray-900 {
     background-color: var(--color-gray-900);
-  }
-  .bg-gray-900\/85 {
-    background-color: color-mix(in srgb, oklch(21% 0.034 264.665) 85%, transparent);
-    @supports (color: color-mix(in lab, red, red)) {
-      background-color: color-mix(in oklab, var(--color-gray-900) 85%, transparent);
-    }
   }
   .bg-orange-400 {
     background-color: var(--color-orange-400);
@@ -772,16 +747,6 @@
       }
     }
   }
-  .hover\:bg-gray-800\/90 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: color-mix(in srgb, oklch(27.8% 0.033 256.848) 90%, transparent);
-        @supports (color: color-mix(in lab, red, red)) {
-          background-color: color-mix(in oklab, var(--color-gray-800) 90%, transparent);
-        }
-      }
-    }
-  }
   .hover\:bg-orange-500\/20 {
     &:hover {
       @media (hover: hover) {
@@ -915,12 +880,6 @@
       line-height: var(--tw-leading, var(--text-base--line-height));
     }
   }
-  .md\:text-lg {
-    @media (width >= 48rem) {
-      font-size: var(--text-lg);
-      line-height: var(--tw-leading, var(--text-lg--line-height));
-    }
-  }
 }
 @keyframes spin {
   0% {
@@ -964,6 +923,11 @@
   background: rgba(255, 111, 0, 0.3) !important;
   color: #fff !important;
   font-weight: 600;
+}
+@media (min-width: 768px) {
+  #titleBar {
+    top: 5rem !important;
+  }
 }
 @property --tw-translate-x {
   syntax: "*";
